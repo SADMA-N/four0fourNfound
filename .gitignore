@@ -1,0 +1,12 @@
+.DS_Store                                                               
+node_modules/                                                                    
+dist/                                                                                        
+.venv/                                                                   
+.uv-cache/                                                       
+__pycache__/    
+*.py[cod]                                                                
+*.sqlite3                                                                  
+db.sqlite3                                                                 
+media/                                                                    
+.env                                                              
+.env.local
