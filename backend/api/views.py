@@ -1,11 +1,5 @@
-from django.shortcuts import render
-
-#logic for health checks, authentication, user information, task CRUD (filtered by date), image uploads, and polygon annotation persistence
-
 from __future__ import annotations
-
 import re
-
 from django.contrib.auth import authenticate
 from django.db.models import Prefetch
 from rest_framework import status
@@ -15,9 +9,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from .models import AnnotatedImage, AnnotationPolygon, Task
 from .serializers import AnnotatedImageSerializer, PolygonSerializer, TaskSerializer
+
+
+
+#logic for health checks, authentication, user information, task CRUD (filtered by date), image uploads, and polygon annotation persistence
 
 HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
