@@ -10,12 +10,15 @@ export interface Task {
   id: number;
   title: string;
   status: TaskStatus;
+  position: number;
   priority: TaskPriority;
   dueDate: string;
   tags: string[];
   createdAt: string;
   updatedAt: string;
 }
+
+export type TaskOrder = Record<TaskStatus, number[]>;
 
 export interface Point {
   x: number;

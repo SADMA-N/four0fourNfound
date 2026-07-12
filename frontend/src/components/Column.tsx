@@ -1,5 +1,10 @@
 import { useDroppable } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import type { Task, TaskStatus } from "../types";
+import { columnDndId, taskDndId } from "./boardState";
 import { TaskCard } from "./TaskCard";
 
 export function Column({
@@ -8,14 +13,20 @@ export function Column({
   tasks,
   onEdit,
   onDelete,
+  disabled = false,
 }: {
   title: string;
   status: TaskStatus;
   tasks: Task[];
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
+  disabled?: boolean;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: status });
+  const { setNodeRef, isOver } = useDroppable({
+    id: columnDndId(status),
+    data: { type: "column", status },
+    disabled,
+  });
 
   return (
     <section
@@ -32,22 +43,29 @@ export function Column({
         </span>
       </header>
 
-      <div className="grid gap-3 content-start">
-        {tasks.length ? (
-          tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          ))
-        ) : (
-          <div className="flex items-center justify-center border border-dashed border-[#bdcbd5] rounded-lg text-muted text-[0.9rem] font-extrabold min-h-[90px] p-[18px] text-center">
-            No tasks
-          </div>
-        )}
-      </div>
+      <SortableContext
+        items={tasks.map((task) => taskDndId(task.id))}
+        strategy={verticalListSortingStrategy}
+        disabled={disabled}
+      >
+        <div className="grid gap-3 content-start">
+          {tasks.length ? (
+            tasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                disabled={disabled}
+              />
+            ))
+          ) : (
+            <div className="flex items-center justify-center border border-dashed border-[#bdcbd5] rounded-lg text-muted text-[0.9rem] font-extrabold min-h-[90px] p-[18px] text-center">
+              No tasks
+            </div>
+          )}
+        </div>
+      </SortableContext>
     </section>
   );
 }

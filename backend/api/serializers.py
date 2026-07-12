@@ -10,7 +10,18 @@ class TaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = ["id", "title", "status", "priority", "dueDate", "tags", "createdAt", "updatedAt"]
+        fields = [
+            "id",
+            "title",
+            "status",
+            "priority",
+            "dueDate",
+            "position",
+            "tags",
+            "createdAt",
+            "updatedAt",
+        ]
+        read_only_fields = ["position"]
 
     def validate_tags(self, value):
         if not isinstance(value, list):

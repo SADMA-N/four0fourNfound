@@ -7,6 +7,7 @@ urlpatterns = [
     path("auth/signup/", views.SignupView.as_view(), name="signup"),
     path("auth/me/", views.MeView.as_view(), name="me"),
     path("tasks/", views.TaskCollectionView.as_view(), name="tasks"),
+    path("tasks/reorder/", views.TaskReorderView.as_view(), name="task-reorder"),
     path("tasks/<int:task_id>/", views.TaskDetailView.as_view(), name="task-detail"),
     path("images/", views.ImageCollectionView.as_view(), name="images"),
     path("images/<int:image_id>/", views.ImageDetailView.as_view(), name="image-detail"),

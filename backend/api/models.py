@@ -19,12 +19,19 @@ class Task(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.TODO)
     priority = models.CharField(max_length=20, choices=Priority.choices, default=Priority.MEDIUM)
     due_date = models.DateField()
+    position = models.PositiveIntegerField(default=0)
     tags = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["due_date", "status", "-updated_at"]
+        ordering = ["due_date", "status", "position", "id"]
+        indexes = [
+            models.Index(
+                fields=["owner", "due_date", "status", "position"],
+                name="api_task_board_pos_idx",
+            ),
+        ]
 
     def __str__(self) -> str:
         return self.title

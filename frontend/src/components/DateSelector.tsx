@@ -7,7 +7,7 @@ function shiftDate(value: string, days: number): string {
   return toLocalIsoDate(next);
 }
 
-export function DateSelector() {
+export function DateSelector({ disabled = false }: { disabled?: boolean }) {
   const { selectedDate, setSelectedDate } = useSelectedDate();
 
   return (
@@ -17,6 +17,7 @@ export function DateSelector() {
         type="button"
         onClick={() => setSelectedDate(shiftDate(selectedDate, -1))}
         title="Previous day"
+        disabled={disabled}
       >
         <ChevronLeft size={18} aria-hidden="true" />
       </button>
@@ -27,6 +28,7 @@ export function DateSelector() {
           type="date"
           value={selectedDate}
           onChange={(event) => setSelectedDate(event.target.value)}
+          disabled={disabled}
           className="border-0 min-h-[38px] p-0 min-w-0 outline-none shadow-none"
           style={{ boxShadow: "none" }}
         />
@@ -37,6 +39,7 @@ export function DateSelector() {
         type="button"
         onClick={() => setSelectedDate(shiftDate(selectedDate, 1))}
         title="Next day"
+        disabled={disabled}
       >
         <ChevronRight size={18} aria-hidden="true" />
       </button>

@@ -3,6 +3,7 @@ import type {
   AnnotationPolygon,
   Point,
   Task,
+  TaskOrder,
   TaskPriority,
   TaskStatus,
   User,
@@ -94,6 +95,16 @@ export const api = {
 
   async listTasks(date: string): Promise<{ tasks: Task[] }> {
     return request(`/tasks/?date=${encodeURIComponent(date)}`);
+  },
+
+  async reorderTasks(
+    date: string,
+    order: TaskOrder,
+  ): Promise<{ tasks: Task[] }> {
+    return request("/tasks/reorder/", {
+      method: "PUT",
+      body: JSON.stringify({ date, order }),
+    });
   },
 
   async createTask(input: {

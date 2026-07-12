@@ -1,8 +1,14 @@
 from __future__ import annotations
+
 import re
+from collections.abc import Mapping
+from datetime import date
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.db.models import Prefetch
+from django.utils.dateparse import parse_date
 from rest_framework import status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -18,6 +24,76 @@ from .serializers import AnnotatedImageSerializer, PolygonSerializer, TaskSerial
 #logic for health checks, authentication, user information, task CRUD (filtered by date), image uploads, and polygon annotation persistence
 
 HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+TASK_STATUSES = tuple(value for value, _label in Task.Status.choices)
+
+
+def _lock_task_owner(user: User) -> None:
+    """Serialize every ordered task mutation for one owner."""
+    User.objects.select_for_update().only("id").get(id=user.id)
+
+
+def _scope_tasks(
+    *,
+    owner_id: int,
+    due_date: date,
+    task_status: str,
+    exclude_id: int | None = None,
+) -> list[Task]:
+    tasks = Task.objects.select_for_update().filter(
+        owner_id=owner_id,
+        due_date=due_date,
+        status=task_status,
+    )
+    if exclude_id is not None:
+        tasks = tasks.exclude(id=exclude_id)
+    return list(tasks.order_by("position", "id"))
+
+
+def _write_positions(tasks: list[Task], *, start: int = 0) -> None:
+    changed: list[Task] = []
+    for position, task in enumerate(tasks, start=start):
+        if task.position != position:
+            task.position = position
+            changed.append(task)
+    if changed:
+        Task.objects.bulk_update(changed, ["position"])
+
+
+def _parse_reorder_payload(
+    payload: object,
+) -> tuple[date | None, dict[str, list[int]] | None, str | None]:
+    if not isinstance(payload, Mapping):
+        return None, None, "The request body must be an object."
+
+    raw_date = payload.get("date")
+    if not isinstance(raw_date, str):
+        return None, None, "Date must use YYYY-MM-DD format."
+    selected_date = parse_date(raw_date)
+    if selected_date is None or selected_date.isoformat() != raw_date:
+        return None, None, "Date must use YYYY-MM-DD format."
+
+    raw_order = payload.get("order")
+    if not isinstance(raw_order, Mapping) or set(raw_order.keys()) != set(TASK_STATUSES):
+        return None, None, "Order must contain exactly todo, in_progress, and done."
+
+    order: dict[str, list[int]] = {}
+    seen_ids: set[int] = set()
+    for task_status in TASK_STATUSES:
+        raw_ids = raw_order[task_status]
+        if not isinstance(raw_ids, list):
+            return None, None, f"Order for {task_status} must be a list."
+
+        task_ids: list[int] = []
+        for task_id in raw_ids:
+            if type(task_id) is not int or task_id <= 0:
+                return None, None, "Every task ID must be a positive integer."
+            if task_id in seen_ids:
+                return None, None, "A task ID cannot appear more than once."
+            seen_ids.add(task_id)
+            task_ids.append(task_id)
+        order[task_status] = task_ids
+
+    return selected_date, order, None
 
 
 # ─── Health ───────────────────────────────────────────────────────────────────
@@ -137,7 +213,19 @@ class TaskCollectionView(APIView):
                 {"error": "Task validation failed.", "details": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        serializer.save(owner=request.user)
+
+        due_date = serializer.validated_data["due_date"]
+        task_status = serializer.validated_data.get("status", Task.Status.TODO)
+        with transaction.atomic():
+            _lock_task_owner(request.user)
+            destination_tasks = _scope_tasks(
+                owner_id=request.user.id,
+                due_date=due_date,
+                task_status=task_status,
+            )
+            _write_positions(destination_tasks, start=1)
+            serializer.save(owner=request.user, position=0)
+
         return Response({"task": serializer.data}, status=status.HTTP_201_CREATED)
 
 
@@ -154,24 +242,122 @@ class TaskDetailView(APIView):
         return Response({"task": TaskSerializer(task).data})
 
     def patch(self, request: Request, task_id: int) -> Response:
-        task = self._get_task(request, task_id)
-        if task is None:
-            return Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
-        serializer = TaskSerializer(task, data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(
-                {"error": "Task validation failed.", "details": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
+        with transaction.atomic():
+            _lock_task_owner(request.user)
+            task = (
+                Task.objects.select_for_update()
+                .filter(id=task_id, owner=request.user)
+                .first()
             )
-        serializer.save()
+            if task is None:
+                return Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = TaskSerializer(task, data=request.data, partial=True)
+            if not serializer.is_valid():
+                return Response(
+                    {"error": "Task validation failed.", "details": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            destination_date = serializer.validated_data.get("due_date", task.due_date)
+            destination_status = serializer.validated_data.get("status", task.status)
+            scope_changed = (
+                destination_date != task.due_date or destination_status != task.status
+            )
+
+            if scope_changed:
+                source_tasks = _scope_tasks(
+                    owner_id=request.user.id,
+                    due_date=task.due_date,
+                    task_status=task.status,
+                    exclude_id=task.id,
+                )
+                destination_tasks = _scope_tasks(
+                    owner_id=request.user.id,
+                    due_date=destination_date,
+                    task_status=destination_status,
+                )
+                _write_positions(source_tasks)
+                _write_positions(destination_tasks)
+                serializer.save(position=len(destination_tasks))
+            else:
+                serializer.save()
+
         return Response({"task": serializer.data})
 
     def delete(self, request: Request, task_id: int) -> Response:
-        task = self._get_task(request, task_id)
-        if task is None:
-            return Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
-        task.delete()
+        with transaction.atomic():
+            _lock_task_owner(request.user)
+            task = (
+                Task.objects.select_for_update()
+                .filter(id=task_id, owner=request.user)
+                .first()
+            )
+            if task is None:
+                return Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            source_date = task.due_date
+            source_status = task.status
+            task.delete()
+            source_tasks = _scope_tasks(
+                owner_id=request.user.id,
+                due_date=source_date,
+                task_status=source_status,
+            )
+            _write_positions(source_tasks)
+
         return Response({"deleted": True})
+
+
+class TaskReorderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request: Request) -> Response:
+        selected_date, order, validation_error = _parse_reorder_payload(request.data)
+        if validation_error is not None:
+            return Response(
+                {"error": validation_error},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        assert selected_date is not None
+        assert order is not None
+        submitted_ids = {
+            task_id
+            for task_ids in order.values()
+            for task_id in task_ids
+        }
+
+        with transaction.atomic():
+            _lock_task_owner(request.user)
+            board_tasks = list(
+                Task.objects.select_for_update()
+                .filter(owner=request.user, due_date=selected_date)
+                .order_by("id")
+            )
+            current_ids = {task.id for task in board_tasks}
+            if submitted_ids != current_ids:
+                return Response(
+                    {"error": "The task board changed. Fetch the latest tasks and try again."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            tasks_by_id = {task.id: task for task in board_tasks}
+            for task_status, task_ids in order.items():
+                for position, task_id in enumerate(task_ids):
+                    task = tasks_by_id[task_id]
+                    task.status = task_status
+                    task.position = position
+
+            if board_tasks:
+                Task.objects.bulk_update(board_tasks, ["status", "position"])
+
+            authoritative_tasks = (
+                Task.objects.filter(owner=request.user, due_date=selected_date)
+                .order_by("status", "position", "id")
+            )
+            serializer = TaskSerializer(authoritative_tasks, many=True)
+            return Response({"tasks": serializer.data})
 
 
 # ─── Images ───────────────────────────────────────────────────────────────────
@@ -272,5 +458,3 @@ class PolygonDetailView(APIView):
             return Response({"error": "Polygon not found."}, status=status.HTTP_404_NOT_FOUND)
         polygon.delete()
         return Response({"deleted": True})
-
-
