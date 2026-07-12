@@ -23,7 +23,9 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "cloudinary_storage",
     "django.contrib.staticfiles",
+    "cloudinary",
     "rest_framework",
     "rest_framework_simplejwt",
     "corsheaders",
@@ -127,3 +129,23 @@ CORS_ALLOW_HEADERS = [
     "x-csrftoken",
     "x-requested-with",
 ]
+
+# ─── Cloudinary Storage Settings ──────────────────────────────────────────────
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+if os.environ.get("CLOUDINARY_CLOUD_NAME"):
+    CLOUDINARY_STORAGE = {
+        "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME"),
+        "API_KEY": os.environ.get("CLOUDINARY_API_KEY"),
+        "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
+    }
+    STORAGES["default"] = {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    }
