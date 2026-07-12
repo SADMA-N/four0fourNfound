@@ -9,6 +9,7 @@ import {
 import { useAuth } from "./context/AuthContext";
 import { AnnotatePage } from "./pages/AnnotatePage";
 import { LoginPage } from "./pages/LoginPage";
+import { SignupPage } from "./pages/SignupPage";
 import { TasksPage } from "./pages/TasksPage";
 
 function AppShell() {
@@ -104,6 +105,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route path="/*" element={<AppShell />} />
     </Routes>
   );

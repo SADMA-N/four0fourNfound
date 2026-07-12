@@ -1,6 +1,7 @@
 from __future__ import annotations
 import re
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 from django.db.models import Prefetch
 from rest_framework import status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -60,6 +61,52 @@ class LoginView(APIView):
             "token": str(refresh.access_token),
             "user": {"id": user.id, "email": user.email or user.username},
         })
+
+
+class SignupView(APIView):
+    """
+    POST { email, password } → { token, user }
+    Creates a new user account then returns a JWT so the user is
+    immediately logged in — no separate login step needed.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request) -> Response:
+        email = str(request.data.get("email", "")).strip().lower()
+        password = str(request.data.get("password", ""))
+
+        if not email or not password:
+            return Response(
+                {"error": "Email and password are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(password) < 8:
+            return Response(
+                {"error": "Password must be at least 8 characters."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if User.objects.filter(username=email).exists():
+            return Response(
+                {"error": "An account with this email already exists."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password=password,
+        )
+
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                "token": str(refresh.access_token),
+                "user": {"id": user.id, "email": user.email},
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class MeView(APIView):

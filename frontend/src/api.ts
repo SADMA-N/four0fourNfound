@@ -78,6 +78,16 @@ export const api = {
     });
   },
 
+  async signup(
+    email: string,
+    password: string,
+  ): Promise<{ token: string; user: User }> {
+    return request("/auth/signup/", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+  },
+
   async me(): Promise<{ user: User }> {
     return request("/auth/me/");
   },

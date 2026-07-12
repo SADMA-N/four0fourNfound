@@ -4,24 +4,29 @@ import { Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-export function LoginPage() {
-  const { login } = useAuth();
+export function SignupPage() {
+  const { signup } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("demo@pronfou.test");
-  const [password, setPassword] = useState("demo12345");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (password !== confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
     setSubmitting(true);
     setError("");
     try {
-      await login(email, password);
+      await signup(email, password);
       navigate("/tasks", { replace: true });
     } catch (nextError) {
       setError(
-        nextError instanceof Error ? nextError.message : "Login failed.",
+        nextError instanceof Error ? nextError.message : "Sign up failed.",
       );
     } finally {
       setSubmitting(false);
@@ -35,7 +40,7 @@ export function LoginPage() {
         gridTemplateColumns: "minmax(320px,1.05fr) minmax(320px,0.95fr)",
       }}
     >
-      {/* App Preview Panel */}
+      {/* App Preview Panel — same decorative panel as LoginPage */}
       <section
         className="bg-white border border-line rounded-lg shadow-app grid overflow-hidden p-[22px] min-h-[620px]"
         style={{ gridTemplateRows: "auto 1fr auto" }}
@@ -116,7 +121,7 @@ export function LoginPage() {
         </div>
       </section>
 
-      {/* Login Panel */}
+      {/* Signup Panel */}
       <section
         className="bg-white border border-line rounded-lg shadow-app grid p-[clamp(26px,5vw,58px)]"
         style={{ alignContent: "center" }}
@@ -127,7 +132,7 @@ export function LoginPage() {
           </span>
           <div>
             <h1 className="text-[clamp(2rem,4vw,4rem)] leading-none tracking-tight m-0">
-              Project Not Found
+              Create account
             </h1>
             <p className="text-muted mt-2 mb-0">
               Tasks and image annotations in one focused workspace.
@@ -139,19 +144,35 @@ export function LoginPage() {
           <label>
             <span>Email</span>
             <input
+              id="signup-email"
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
           </label>
           <label>
             <span>Password</span>
             <input
+              id="signup-password"
               type="password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={8}
+              autoComplete="new-password"
+            />
+          </label>
+          <label>
+            <span>Confirm password</span>
+            <input
+              id="signup-confirm"
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              required
+              autoComplete="new-password"
             />
           </label>
           {error ? <div className="form-error">{error}</div> : null}
@@ -163,15 +184,15 @@ export function LoginPage() {
             {submitting ? (
               <Loader2 className="spin" size={17} aria-hidden="true" />
             ) : null}
-            <span>{submitting ? "Signing in" : "Sign in"}</span>
+            <span>{submitting ? "Creating account…" : "Create account"}</span>
           </button>
           <p className="text-center text-muted text-[0.9rem] mt-1 mb-0">
-            Don&apos;t have an account?{" "}
+            Already have an account?{" "}
             <Link
-              to="/signup"
+              to="/login"
               className="text-teal font-bold no-underline hover:underline"
             >
-              Sign up
+              Sign in
             </Link>
           </p>
         </form>

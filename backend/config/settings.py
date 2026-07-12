@@ -1,6 +1,10 @@
 from pathlib import Path
 import os
 from datetime import timedelta
+from urllib.parse import urlparse, parse_qsl
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -55,10 +59,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+_db_url = urlparse(os.environ["DATABASE_URL"])
+
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": _db_url.path.lstrip("/"),
+        "USER": _db_url.username,
+        "PASSWORD": _db_url.password,
+        "HOST": _db_url.hostname,
+        "PORT": _db_url.port or 5432,
+        "OPTIONS": dict(parse_qsl(_db_url.query)),
     }
 }
 
