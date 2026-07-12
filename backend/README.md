@@ -57,9 +57,24 @@ python manage.py runserver 0.0.0.0:8000
 ### 1. File Deletion on Model Cleanup
 
 The Villain: Standard Django .delete() calls on model objects remove rows from SQLite but do not clean up physical image assets on disk. This results in orphaned files cluttering storage.
-The Solution: Inside ImageDetailView.delete , we explicitly trigger image.image.delete (save=False) to force disk scrubbing prior to DB row deletion, keeping our file directories clean.
+The Solution: Inside `ImageDetailView.delete`, we explicitly trigger `image.image.delete(save=False)` to force disk scrubbing prior to DB row deletion, keeping our file directories clean.
 
 ### 2. Relative Image Annotation Scales
 
 The Villain: Images render at different pixel widths/heights depending on the client screen size. Absolute pixel coordinates drawn on a desktop screen would align incorrectly on a tablet.  
 The Solution: We normalized coordinate vertices to float fractions between 0.0 and 1.0 (relative to the image width and height) on saving, allowing the frontend to scale polygons dynamically to fit any display viewport.
+
+### 3. Database Schema Mismatch on Serverless Deployments
+
+The Villain: Applying database schema migrations locally on Neon PostgreSQL added a `position` column with a `NOT NULL` constraint. However, Vercel was still running the old backend code that did not supply a value for `position` during task creation, triggering `IntegrityError` (500) alerts.
+The Solution: We redeployed the updated backend codebase to Vercel via Vercel CLI, ensuring the code logic matches the migrated database model.
+
+### 4. Ephemeral Filesystem Storage on Vercel Serverless
+
+The Villain: Vercel serverless containers are ephemeral and do not share local filesystem memory. Files uploaded to the writable `/tmp/media` path on one container were completely inaccessible (`404 Not Found`) when subsequent requests were routed to different containers.
+The Solution: We added support for `django-cloudinary-storage` so that media files are persistently stored in Cloudinary in production, with a clean local filesystem fallback for development when no keys are provided.
+
+### 5. Signature Authorization failures from Copied Credentials
+
+The Villain: Copying API Secrets from screenshots introduced character confusion due to sans-serif font rendering. Lowercase `l` and uppercase `I` look identical, causing Cloudinary to reject uploads with an `Invalid Signature` exception.
+The Solution: We wrote a quick brute-force script testing all potential credential permutations against the Cloudinary endpoint, identifying the correct secret containing a capital `I` (`Ymf5__jKFT5cKmGAIxWHQjJG1XY`).

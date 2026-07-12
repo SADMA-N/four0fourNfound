@@ -49,5 +49,9 @@ The Solution: Inside DateContext.tsx we implemented toLocalIsoDate , offsetting 
 ### 3. Drag and Drop Button Clicks
 
 The Villain: Simple pointer-drag sensors hijack clicks. Clicking "Edit" or "Delete" inside task cards triggered drag events instead of clicks.  
-The Solution: We defined an activationConstraint: { distance: 5 } on @dnd-kit 's PointerSensor and attached the drag handles exclusively to the GripVertical
-icon. This leaves standard card buttons fully interactive.
+The Solution: We defined an `activationConstraint: { distance: 5 }` on `@dnd-kit`'s `PointerSensor` and attached the drag handles exclusively to the `GripVertical` icon. This leaves standard card buttons fully interactive.
+
+### 4. Sortable Drag-and-Drop and Inter-Column Movement
+
+The Villain: The initial drag-and-drop system was naive: moving a task to a column always appended it to the bottom, and reordering within the same column was completely unsupported.
+The Solution: We rebuilt the drag-and-drop handler to track drop target indicators, calculate exact vertical hover coordinates, and dynamically compute the insertion index based on cursor drop position. The backend updates the position values of all existing items on save to persist this sequence.
