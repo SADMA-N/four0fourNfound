@@ -14,6 +14,12 @@ The frontend interface communicates with a Django REST API. All records, task-or
 
 ---
 
+### Project Demo Video
+
+https://github.com/user-attachments/assets/2786cd22-0747-49fa-aa28-d02150ddfa59
+
+---
+
 ## Main Features
 
 - **Authentication Suite**: JWT-protected login and signup, featuring custom interactive technical schematics drawn in pure vector CSS and HTML.
