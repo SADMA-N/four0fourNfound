@@ -155,17 +155,14 @@ export function TasksPage() {
 
   return (
     <section className="grid gap-5">
-      <header className="flex items-end justify-between gap-[18px]">
-        <div>
-          <span className="block text-teal text-[0.78rem] font-black uppercase mb-[10px] tracking-tight">
-            Task page
-          </span>
-          <h1 className="text-[clamp(2rem,4vw,4rem)] leading-none tracking-tight m-0">
-            Nobody does the task
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-[1.05rem] font-semibold text-ink m-0 leading-none">
+            Task Board
           </h1>
-          <p className="text-muted mt-2 mb-0">
-            {taskCountLabel} for the selected day
-          </p>
+          <span className="mono text-[0.78rem] text-muted" aria-live="polite">
+            {taskCountLabel}
+          </span>
         </div>
         <div className="flex flex-wrap items-center gap-[10px] justify-end">
           <DateSelector disabled={reorderPending} />

@@ -1,9 +1,16 @@
-import { Eraser, Save, Undo2 } from "lucide-react";
+import { Eraser, Save, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import type { AnnotatedImage, AnnotationPolygon, Point } from "../types";
 
-const palette = ["#0f8b8d", "#ef476f", "#2d6cdf", "#f59f00", "#118c4f"];
+/* ── Color palette with human-readable names ─────────────────────── */
+const palette: Array<{ hex: string; name: string }> = [
+  { hex: "#0f8b8d", name: "Teal" },
+  { hex: "#ef476f", name: "Red" },
+  { hex: "#2d6cdf", name: "Blue" },
+  { hex: "#f59f00", name: "Amber" },
+  { hex: "#118c4f", name: "Green" },
+];
 
 export function AnnotationCanvas({
   image,
@@ -25,13 +32,15 @@ export function AnnotationCanvas({
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [draft, setDraft] = useState<Point[]>([]);
   const [label, setLabel] = useState("");
-  const [color, setColor] = useState(palette[0]);
+  const [color, setColor] = useState(palette[0].hex);
 
+  /* ── Reset draft state when selected image changes ─────────────── */
   useEffect(() => {
     setDraft([]);
     setLabel("");
   }, [image.id]);
 
+  /* ── Sync canvas size to rendered image size ───────────────────── */
   useEffect(() => {
     const img = imgRef.current;
     if (!img) return;
@@ -52,6 +61,7 @@ export function AnnotationCanvas({
     };
   }, [image.id]);
 
+  /* ── Redraw canvas whenever polygons / draft / size change ──────── */
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || size.width === 0 || size.height === 0) return;
@@ -79,6 +89,7 @@ export function AnnotationCanvas({
     }
   }, [color, draft, image.polygons, size]);
 
+  /* ── Place a point on the canvas ──────────────────────────────── */
   const addPoint = (event: MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -89,6 +100,7 @@ export function AnnotationCanvas({
     setDraft((points) => [...points, { x, y }]);
   };
 
+  /* ── Persist the current draft as a polygon ────────────────────── */
   const saveDraft = async () => {
     if (draft.length < 3) return;
     await onAddPolygon(draft, label, color);
@@ -96,16 +108,27 @@ export function AnnotationCanvas({
     setLabel("");
   };
 
+  const draftPointCount = draft.length;
+  const canSave = draftPointCount >= 3 && !saving;
+
   return (
-    <section
-      className="grid gap-4"
+    /* ── Two-column layout: canvas dominant, polygon panel at right ─ */
+    /* On small screens the layout stacks vertically.                  */
+    <div
+      className="flex flex-col gap-4 lg:grid"
       style={{ gridTemplateColumns: "minmax(0,1fr) 290px" }}
     >
-      {/* Canvas panel */}
+      {/* ── Canvas panel ──────────────────────────────────────── */}
       <div className="card min-w-0 overflow-hidden">
+
         {/* Toolbar */}
-        <div className="flex flex-wrap items-end gap-[10px] p-3 border-b border-line">
-          <label className="min-w-[190px]">
+        <div
+          className="flex flex-wrap items-end gap-[10px] p-3 border-b border-line"
+          role="toolbar"
+          aria-label="Annotation tools"
+        >
+          {/* Label input */}
+          <label className="min-w-[180px]">
             <span>Label</span>
             <input
               value={label}
@@ -115,54 +138,88 @@ export function AnnotationCanvas({
             />
           </label>
 
+          {/* Color swatches */}
           <div
             className="inline-flex items-center gap-2 min-h-[40px]"
+            role="group"
             aria-label="Polygon color"
           >
             {palette.map((swatch) => (
               <button
-                key={swatch}
+                key={swatch.hex}
                 className={`rounded-full w-7 h-7 p-0 border-2 border-white transition-shadow ${
-                  swatch === color
+                  swatch.hex === color
                     ? "shadow-[0_0_0_3px_rgba(15,139,141,0.28)]"
                     : "shadow-[0_0_0_1px_#d9e1e7]"
                 }`}
-                style={{ backgroundColor: swatch }}
+                style={{ backgroundColor: swatch.hex }}
                 type="button"
-                onClick={() => setColor(swatch)}
-                title={`Use ${swatch}`}
+                onClick={() => setColor(swatch.hex)}
+                aria-label={`${swatch.name}${swatch.hex === color ? " (selected)" : ""}`}
+                aria-pressed={swatch.hex === color}
+                title={swatch.name}
               />
             ))}
           </div>
 
+          {/* Undo — remove last placed point */}
           <button
-            className="btn-icon"
+            className="btn-ghost px-3"
             type="button"
             onClick={() => setDraft((points) => points.slice(0, -1))}
-            title="Undo point"
+            disabled={draftPointCount === 0}
+            aria-label="Undo last point"
+            title="Undo last point"
           >
-            <Undo2 size={18} aria-hidden="true" />
+            <Undo2 size={16} aria-hidden="true" />
+            <span>Undo</span>
           </button>
+
+          {/* Clear — discard all draft points */}
           <button
-            className="btn-icon text-coral"
+            className="btn-ghost px-3"
             type="button"
             onClick={() => setDraft([])}
-            title="Clear draft"
+            disabled={draftPointCount === 0}
+            aria-label="Clear all draft points"
+            title="Clear all draft points"
           >
-            <Eraser size={18} aria-hidden="true" />
+            <Eraser size={16} aria-hidden="true" />
+            <span>Clear</span>
           </button>
+
+          {/* Save polygon */}
           <button
             className="btn-primary"
             type="button"
-            disabled={draft.length < 3 || saving}
+            disabled={!canSave}
             onClick={saveDraft}
+            aria-label={
+              saving
+                ? "Saving polygon"
+                : `Save polygon${draftPointCount >= 3 ? ` (${draftPointCount} points)` : ""}`
+            }
           >
-            <Save size={17} aria-hidden="true" />
-            <span>{saving ? "Saving" : "Save polygon"}</span>
+            <Save size={16} aria-hidden="true" />
+            <span>{saving ? "Saving…" : "Save polygon"}</span>
           </button>
         </div>
 
-        {/* Canvas stage — checkerboard background */}
+        {/* Draft point counter — live feedback shown only while drawing */}
+        {draftPointCount > 0 && (
+          <div
+            className="px-3 py-[6px] border-b border-line bg-surface-2 mono text-[0.78rem] text-muted"
+            aria-live="polite"
+          >
+            {draftPointCount} point{draftPointCount !== 1 ? "s" : ""} placed
+            {draftPointCount < 3
+              ? ` — add ${3 - draftPointCount} more to save`
+              : " — ready to save"}
+          </div>
+        )}
+
+        {/* ── Canvas stage — checkerboard background ────────── */}
+        {/* Background pattern helps distinguish transparent/unused areas */}
         <div
           className="relative w-full overflow-auto p-[18px] mx-auto"
           style={{
@@ -196,59 +253,78 @@ export function AnnotationCanvas({
             ref={canvasRef}
             onClick={addPoint}
             className="cursor-crosshair absolute top-[18px] left-[18px] z-[2]"
+            aria-label="Annotation canvas — click to place polygon points"
+            role="img"
           />
         </div>
       </div>
 
-      {/* Polygon panel */}
-      <aside className="card grid gap-3 p-[14px] content-start">
+      {/* ── Polygon panel ─────────────────────────────────────── */}
+      <aside
+        className="card grid gap-3 p-[14px] content-start"
+        aria-label="Saved polygons"
+      >
         <header className="flex items-center justify-between">
-          <h2 className="text-[1rem] m-0">Polygons</h2>
-          <span className="inline-flex items-center justify-center bg-white border border-line rounded-lg text-muted text-[0.82rem] font-black h-[30px] min-w-[32px]">
+          <h2 className="text-[1rem] font-semibold m-0">Polygons</h2>
+          <span
+            className="inline-flex items-center justify-center bg-white border border-line rounded-lg text-muted mono text-[0.82rem] font-bold h-[30px] min-w-[32px] px-2"
+            aria-label={`${image.polygons.length} saved polygon${
+              image.polygons.length !== 1 ? "s" : ""
+            }`}
+          >
             {image.polygons.length}
           </span>
         </header>
 
-        <div className="grid gap-[10px]">
+        <div className="grid gap-[8px]">
           {image.polygons.length ? (
             image.polygons.map((polygon, index) => (
               <div
                 key={polygon.id}
-                className="flex items-center gap-[10px] bg-surface-2 border border-line rounded-lg min-h-[58px] p-[10px]"
+                className="flex items-center gap-[10px] bg-surface-2 border border-line rounded-lg min-h-[52px] p-[10px]"
               >
+                {/* Color dot */}
                 <span
-                  className="shrink-0 w-[18px] h-[18px] rounded-full border-2 border-white shadow-[0_0_0_1px_#d9e1e7]"
+                  className="shrink-0 w-[16px] h-[16px] rounded-full border-2 border-white shadow-[0_0_0_1px_#d9e1e7]"
                   style={{ backgroundColor: polygon.color }}
+                  aria-hidden="true"
                 />
+                {/* Label and point count */}
                 <div className="grid flex-1 gap-[2px] min-w-0">
-                  <strong className="overflow-hidden text-ellipsis whitespace-nowrap">
+                  <strong className="text-[0.87rem] overflow-hidden text-ellipsis whitespace-nowrap">
                     {polygon.label || `Polygon ${index + 1}`}
                   </strong>
-                  <span className="text-muted text-[0.78rem] font-bold overflow-hidden text-ellipsis whitespace-nowrap">
-                    {polygon.points.length} points
+                  <span className="text-muted mono text-[0.75rem] font-semibold overflow-hidden text-ellipsis whitespace-nowrap">
+                    {polygon.points.length} pts
                   </span>
                 </div>
+                {/* Delete polygon */}
                 <button
-                  className="btn-mini text-coral"
+                  className="btn-mini text-coral shrink-0"
                   type="button"
                   onClick={() => onDeletePolygon(polygon)}
+                  aria-label={`Delete polygon: ${
+                    polygon.label || `Polygon ${index + 1}`
+                  }`}
                   title="Delete polygon"
                 >
-                  <Eraser size={15} aria-hidden="true" />
+                  <Trash2 size={14} aria-hidden="true" />
                 </button>
               </div>
             ))
           ) : (
-            <div className="flex items-center justify-center border border-dashed border-[#bdcbd5] rounded-lg text-muted text-[0.9rem] font-extrabold min-h-[90px] p-[18px] text-center">
-              No polygons
+            <div className="flex items-center justify-center border border-dashed border-line rounded-lg text-muted text-[0.82rem] min-h-[90px] p-[18px] text-center leading-relaxed">
+              Click on the image to place polygon points
             </div>
           )}
         </div>
       </aside>
-    </section>
+    </div>
   );
 }
 
+/* ── Canvas drawing function ─────────────────────────────────────── */
+/* Preserved exactly as originally authored — no changes.            */
 function drawPolygon(
   context: CanvasRenderingContext2D,
   points: Point[],

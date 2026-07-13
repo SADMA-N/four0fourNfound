@@ -1,0 +1,38 @@
+{
+  "register": "product",
+  "platform": "web",
+  "direction": "drafting-table",
+  "directionApproved": true,
+  "approvedDate": "2026-07-13",
+  "palette": {
+    "bg": "oklch(96.8% 0.007 85)",
+    "surface": "#ffffff",
+    "surface2": "oklch(93.5% 0.009 83)",
+    "ink": "oklch(22% 0.04 258)",
+    "muted": "oklch(55% 0.022 258)",
+    "primary": "oklch(66% 0.155 215)",
+    "primaryLabel": "blueprint cyan",
+    "tokenAlias": "teal"
+  },
+  "typography": {
+    "sans": "Space Grotesk",
+    "mono": "JetBrains Mono"
+  },
+  "motifs": {
+    "grid": "workspace-bg utility — column bodies and annotation canvas stage only",
+    "identity": "title-block in sidebar header and footer revision stamp only",
+    "priorityDisplay": "symbol badge — no left-border stripe"
+  },
+  "stages": {
+    "completed": ["stage-1-foundation", "stage-2-shell", "stage-3-board", "stage-4-modal", "stage-5-annotation", "stage-6-auth"],
+    "pending": [],
+    "stageCompletedAt": {
+      "stage-1-foundation": "2026-07-13",
+      "stage-2-shell": "2026-07-13",
+      "stage-3-board": "2026-07-13",
+      "stage-4-modal": "2026-07-13",
+      "stage-5-annotation": "2026-07-13",
+      "stage-6-auth": "2026-07-13"
+    }
+  }
+}

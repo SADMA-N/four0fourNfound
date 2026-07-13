@@ -1,4 +1,4 @@
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toLocalIsoDate, useSelectedDate } from "../context/DateContext";
 
 function shiftDate(value: string, days: number): string {
@@ -11,37 +11,49 @@ export function DateSelector({ disabled = false }: { disabled?: boolean }) {
   const { selectedDate, setSelectedDate } = useSelectedDate();
 
   return (
-    <div className="inline-flex items-center gap-2">
+    <div className="inline-flex items-center gap-1">
+      {/* ── Previous day ────────────────────────────────────────── */}
       <button
         className="btn-icon"
         type="button"
         onClick={() => setSelectedDate(shiftDate(selectedDate, -1))}
+        aria-label="Previous day"
         title="Previous day"
         disabled={disabled}
       >
-        <ChevronLeft size={18} aria-hidden="true" />
+        <ChevronLeft size={16} aria-hidden="true" />
       </button>
 
-      <label className="inline-flex items-center gap-2 bg-white border border-line rounded-lg text-muted min-h-[40px] px-[10px] cursor-pointer">
-        <Calendar size={18} aria-hidden="true" />
+      {/* ── Date control ─────────────────────────────────────────── */}
+      {/* The native <input type="date"> is kept visible and interactive  */}
+      {/* so keyboard, touch, and screen-reader users retain full access. */}
+      {/* Monospace font gives it the workspace-control character.        */}
+      <label
+        className="inline-flex items-center bg-surface border border-line rounded-[6px] px-3 cursor-pointer"
+        style={{ minHeight: "40px", gap: "8px" }}
+        aria-label={`Selected date, ${selectedDate}`}
+      >
         <input
           type="date"
           value={selectedDate}
           onChange={(event) => setSelectedDate(event.target.value)}
           disabled={disabled}
-          className="border-0 min-h-[38px] p-0 min-w-0 outline-none shadow-none"
-          style={{ boxShadow: "none" }}
+          aria-label="Select date"
+          className="mono border-0 min-h-0 p-0 text-[0.82rem] text-ink bg-transparent"
+          style={{ boxShadow: "none", minWidth: "112px" }}
         />
       </label>
 
+      {/* ── Next day ────────────────────────────────────────────── */}
       <button
         className="btn-icon"
         type="button"
         onClick={() => setSelectedDate(shiftDate(selectedDate, 1))}
+        aria-label="Next day"
         title="Next day"
         disabled={disabled}
       >
-        <ChevronRight size={18} aria-hidden="true" />
+        <ChevronRight size={16} aria-hidden="true" />
       </button>
     </div>
   );

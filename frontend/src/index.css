@@ -1,90 +1,207 @@
 @import "tailwindcss";
 
+/* ── Design Tokens: Drafting Table ──────────────────────────────── */
 @theme {
-  --font-sans: "Inter", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif";
-  
-  --color-bg: #f4f7f9;
-  --color-surface: #ffffff;
-  --color-surface-2: #eef3f6;
-  --color-ink: #17202a;
-  --color-muted: #677481;
-  --color-line: #d9e1e7;
-  --color-teal: #0f8b8d;
-  --color-teal-dark: #086466;
-  --color-coral: #ef476f;
-  --color-blue: #2d6cdf;
-  --color-green: #118c4f;
-  --color-amber: #f59f00;
-  
-  --shadow-app: 0 18px 55px rgba(27,42,58,0.12);
-  --shadow-card: 0 10px 30px rgba(23,32,42,0.07);
+  /* Typography */
+  --font-sans: "Space Grotesk", "ui-sans-serif", "system-ui", "-apple-system",
+    "BlinkMacSystemFont", "Segoe UI", "sans-serif";
+  --font-mono: "JetBrains Mono", "Fira Code", "ui-monospace", "monospace";
+
+  /* Palette */
+  --color-bg: oklch(96.8% 0.007 85);        /* warm drafting paper          */
+  --color-surface: #ffffff;                  /* card / modal face            */
+  --color-surface-2: oklch(93.5% 0.009 83); /* panel fill, column bodies    */
+  --color-ink: oklch(22% 0.04 258);          /* primary text — indigo        */
+  --color-ink-2: oklch(38% 0.035 258);       /* secondary text               */
+  --color-muted: oklch(55% 0.022 258);       /* supporting / placeholder     */
+  --color-line: oklch(86.5% 0.012 258);      /* borders, dividers            */
+
+  /* Semantic / Action */
+  --color-teal: oklch(66% 0.155 215);        /* primary action — blueprint cyan */
+  --color-teal-dark: oklch(56% 0.155 215);   /* hover / active               */
+  --color-coral: oklch(62% 0.20 20);         /* urgent, error, delete        */
+  --color-amber: oklch(74% 0.17 75);         /* high priority, warning       */
+  --color-green: oklch(55% 0.155 158);       /* done, success, low priority  */
+  --color-blue: oklch(54% 0.175 255);        /* medium priority, info        */
+
+  /* Shadows — ink-tinted, not generic dark */
+  --shadow-app: 0 12px 40px rgba(17, 20, 38, 0.12);
+  --shadow-card: 0 2px 8px rgba(17, 20, 38, 0.06);
 }
 
+/* ── Base Layer ─────────────────────────────────────────────────── */
 @layer base {
   html, body, #root {
     min-height: 100%;
     margin: 0;
   }
+
   body {
     @apply bg-bg text-ink font-sans;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+
   *, *::before, *::after {
     box-sizing: border-box;
   }
+
   button, input, select {
     font: inherit;
   }
+
   button {
     cursor: pointer;
   }
+
   button:disabled {
     cursor: not-allowed;
-    opacity: 0.58;
+    opacity: 0.55;
   }
+
   label {
     @apply text-muted text-[0.85rem] font-bold grid gap-[7px];
   }
+
   input, select {
-    @apply bg-white border border-line rounded-lg text-ink min-h-[44px] outline-none px-3;
+    @apply bg-surface border border-line text-ink min-h-[44px] outline-none px-3;
+    border-radius: 6px;
+    transition: border-color 0.13s ease, box-shadow 0.13s ease;
   }
-  input:focus, select:focus {
+
+  input:focus,
+  select:focus {
     @apply border-teal;
-    box-shadow: 0 0 0 3px rgba(15, 139, 141, 0.14);
+    box-shadow: 0 0 0 3px oklch(66% 0.155 215 / 0.18);
+  }
+
+  input::placeholder {
+    @apply text-muted;
+    opacity: 0.7;
+  }
+
+  /* Accessible focus ring for keyboard navigation */
+  :focus-visible {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+  }
+
+  /* Remove default focus ring where custom focus is handled */
+  :focus:not(:focus-visible) {
+    outline: none;
   }
 }
 
+/* ── Button Base Utility ────────────────────────────────────────── */
 @utility btn {
-  @apply inline-flex items-center gap-2 justify-center border border-transparent rounded-lg min-h-[40px] no-underline;
+  @apply inline-flex items-center gap-2 justify-center border border-transparent no-underline;
+  min-height: 40px;
+  border-radius: 6px;
+  transition: background-color 0.13s ease, border-color 0.13s ease,
+    color 0.13s ease, opacity 0.13s ease;
 }
 
+/* ── Component Layer ────────────────────────────────────────────── */
 @layer components {
+  /* Primary button — blueprint cyan fill */
   .btn-primary {
-    @apply btn bg-teal text-white font-extrabold px-4 hover:bg-teal-dark disabled:opacity-60 disabled:cursor-not-allowed;
+    @apply btn bg-teal text-surface font-bold px-4;
   }
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-teal-dark);
+  }
+  .btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  /* Ghost button — surface fill with border */
   .btn-ghost {
     @apply btn bg-surface-2 text-ink font-bold px-4;
+    border: 1px solid var(--color-line);
   }
+  .btn-ghost:hover:not(:disabled) {
+    background-color: oklch(91% 0.011 83);
+  }
+
+  /* Icon button — white fill, square */
   .btn-icon {
-    @apply btn bg-white border-line text-ink w-10 h-10 flex-none p-0;
+    @apply btn bg-surface text-ink flex-none p-0;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--color-line);
   }
+  .btn-icon:hover:not(:disabled) {
+    background-color: var(--color-surface-2);
+  }
+
+  /* Mini icon button */
   .btn-mini {
-    @apply btn bg-white border-line text-ink w-[30px] h-[30px] min-h-[30px] flex-none p-0;
+    @apply btn bg-surface text-ink flex-none p-0;
+    width: 30px;
+    height: 30px;
+    min-height: 30px;
+    border: 1px solid var(--color-line);
   }
+  .btn-mini:hover:not(:disabled) {
+    background-color: var(--color-surface-2);
+  }
+
+  /* Card */
   .card {
-    @apply bg-white border border-line rounded-lg;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 8px;
   }
-  .form-error, .page-error {
-    background: rgba(239, 71, 111, 0.1);
-    border-color: rgba(239, 71, 111, 0.26);
-    color: #9f1636;
-    @apply border rounded-lg font-bold px-4 py-3;
+
+  /* Error states */
+  .form-error,
+  .page-error {
+    background: oklch(62% 0.20 20 / 0.09);
+    border: 1px solid oklch(62% 0.20 20 / 0.3);
+    color: oklch(42% 0.18 20);
+    border-radius: 6px;
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+  }
+
+  /* ── Workspace background: subtle drafting grid ───────────────── */
+  /* Applied to Kanban column bodies and annotation canvas stage only */
+  .workspace-bg {
+    background-color: var(--color-surface-2);
+    background-image:
+      linear-gradient(oklch(80% 0.015 258 / 0.13) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(80% 0.015 258 / 0.13) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* ── Monospace metadata spans ─────────────────────────────────── */
+  .mono {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum" 1;
   }
 }
 
+/* ── Spin Utility ───────────────────────────────────────────────── */
 @utility spin {
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Reduced Motion ─────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -25,10 +25,10 @@ import {
 import { Column } from "./Column";
 import { TaskCardPreview } from "./TaskCard";
 
-const columns: Array<{ title: string; status: TaskStatus }> = [
-  { title: "To Do", status: "todo" },
-  { title: "In Progress", status: "in_progress" },
-  { title: "Done", status: "done" },
+const columns: Array<{ title: string; status: TaskStatus; zone: number }> = [
+  { title: "To Do", status: "todo", zone: 1 },
+  { title: "In Progress", status: "in_progress", zone: 2 },
+  { title: "Done", status: "done", zone: 3 },
 ];
 
 function isTaskStatus(value: unknown): value is TaskStatus {
@@ -289,6 +289,7 @@ export function Board({
           <Column
             key={column.status}
             title={column.title}
+            zone={column.zone}
             status={column.status}
             tasks={tasks.filter((task) => task.status === column.status)}
             onEdit={onEditTask}

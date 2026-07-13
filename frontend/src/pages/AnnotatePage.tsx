@@ -134,27 +134,42 @@ export function AnnotatePage() {
     }
   };
 
+  const imageCountLabel = `${images.length} ${
+    images.length === 1 ? "image" : "images"
+  }`;
+
   return (
-    <section className="grid gap-5">
-      <header className="flex items-end justify-between gap-[18px]">
+    <section className="grid gap-4">
+      {/* ── Workspace header ──────────────────────────────────── */}
+      {/* Compact: monospace eyebrow + h1 + live count + upload   */}
+      <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <span className="block text-teal text-[0.78rem] font-black uppercase mb-[10px] tracking-tight">
-            Annotation page
+          <span
+            className="mono block text-[0.65rem] leading-none tracking-[0.12em] text-muted mb-[6px] select-none"
+            aria-hidden="true"
+          >
+            ANNOTATE — WORKSPACE
           </span>
-          <h1 className="text-[clamp(2rem,4vw,4rem)] leading-none tracking-tight m-0">
-            A great annotation ahead
+          <h1 className="text-[1.35rem] font-semibold text-ink m-0 leading-none">
+            Image Annotation
           </h1>
-          <p className="text-muted mt-2 mb-0">
-            {images.length} uploaded {images.length === 1 ? "image" : "images"}
+          <p
+            className="text-muted text-[0.82rem] mt-[5px] mb-0"
+            aria-live="polite"
+          >
+            {loading ? "Loading…" : imageCountLabel}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-[10px] justify-end">
+
+        <div className="flex items-center gap-[10px] flex-wrap">
+          {/* Hidden file input — triggered by both header and empty-state buttons */}
           <input
             ref={inputRef}
             type="file"
-            accept="image/*"
+            accept="image/png,image/jpeg,image/webp"
             multiple
             onChange={uploadFiles}
+            aria-label="Choose image files to upload"
             hidden
           />
           <button
@@ -168,25 +183,34 @@ export function AnnotatePage() {
             ) : (
               <Upload size={17} aria-hidden="true" />
             )}
-            <span>{saving ? "Working" : "Upload"}</span>
+            <span>{saving ? "Uploading…" : "Upload images"}</span>
           </button>
         </div>
       </header>
 
-      {error ? <div className="page-error">{error}</div> : null}
+      {/* ── Error banner ──────────────────────────────────────── */}
+      {error ? (
+        <div className="page-error" role="alert">
+          {error}
+        </div>
+      ) : null}
 
+      {/* ── Page body ─────────────────────────────────────────── */}
       {loading ? (
         <div className="flex items-center justify-center min-h-[280px]">
-          <Loader2 className="spin" aria-hidden="true" />
+          <Loader2 className="spin" size={24} aria-label="Loading images" />
         </div>
       ) : (
         <>
+          {/* Thumbnail film-strip rail */}
           <ImageScroller
             images={images}
             selectedId={selectedImage?.id ?? null}
             onSelect={setSelectedId}
             onDelete={deleteImage}
           />
+
+          {/* Main canvas workspace or empty state */}
           {selectedImage ? (
             <AnnotationCanvas
               key={selectedImage.id}
@@ -196,12 +220,33 @@ export function AnnotatePage() {
               onDeletePolygon={deletePolygon}
             />
           ) : (
-            <div className="card flex flex-col items-center justify-center gap-2 min-h-[340px] p-[34px] text-center text-muted">
-              <Upload size={24} aria-hidden="true" />
-              <h2 className="text-[1rem] m-0">Upload an image</h2>
-              <p className="m-0">
-                PNG, JPG, or WebP files can be annotated and saved.
-              </p>
+            /* ── Empty state ──────────────────────────────────── */
+            /* Shown when no images have been uploaded yet.        */
+            <div className="card flex flex-col items-center justify-center gap-4 min-h-[380px] p-[34px] text-center">
+              <div
+                className="flex items-center justify-center rounded-full bg-surface-2 border border-line"
+                style={{ width: 56, height: 56 }}
+                aria-hidden="true"
+              >
+                <Upload size={22} className="text-muted" />
+              </div>
+              <div>
+                <h2 className="text-[1.05rem] font-semibold text-ink m-0 mb-[6px]">
+                  Upload an image to begin annotating
+                </h2>
+                <p className="text-muted text-[0.87rem] m-0">
+                  Supported formats: PNG, JPEG, WebP
+                </p>
+              </div>
+              <button
+                className="btn-ghost"
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                disabled={saving}
+              >
+                <Upload size={15} aria-hidden="true" />
+                <span>Choose an image</span>
+              </button>
             </div>
           )}
         </>
