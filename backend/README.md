@@ -313,8 +313,12 @@ Deploys natively to Vercel via WSGI handler bindings in `vercel.json` and WSGI i
 
 ---
 
-## Developer Skills Implemented
+## Developer Skills & Tooling Implemented
 
-This project utilized agent frameworks to enforce design and code standards:
-- **Grill Me**: Used to formulate the task position reordering protocol to handle cross-column index moves safely.
-- **Impeccable**: Used to polish formatting styles and API JSON responses to match client expectations.
+This project utilized specialized agent workflows and MCP tooling to enforce backend structural standards, API design, and deployment validation:
+- **Grill Me**: Used to formulate the task position reordering protocol to handle cross-column index moves safely, and to stress-test coordinate normalization math and Postgres database transaction safety.
+- **Impeccable**: Used to polish data payloads and API JSON responses to match client design token expectations.
+- **Caveman**: Used to carry out robust local console logging, manual endpoint regression checks, and database validation queries.
+- **Handoff**: Used for generating clean state summaries, pre-commit checklists, and detailed project milestone documentation to enable smooth transitions between development cycles.
+- **Chrome DevTools MCP**: Integrated to automate browser viewport emulation (desktop `1280px` vs mobile `375px`), programmatically execute user interaction scripts (click events, input form fills), and capture rendered page state screenshots.
+- **Vercel MCP**: Integrated to list project configurations, query active deployments, fetch build logs, and monitor remote deployment pipelines directly.

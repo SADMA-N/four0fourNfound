@@ -282,8 +282,12 @@ To build and run the production version:
 
 ---
 
-## Developer Skills Implemented
+## Developer Skills & Tooling Implemented
 
-This project utilized specialized agent workflows to harden and refine frontend design and code qualities:
+This project utilized specialized agent workflows and MCP tooling to harden and refine frontend design, code qualities, and deployment safety:
 - **Grill Me**: Used to align complex architectural patterns and deep technical questions around coordinate scaling and state transitions prior to code writing.
-- **Impeccable**: Used to audit, refine, and shape visual hierarchies, contrast ratios, micro-animations, and z-index structures to create a premium Drafting Table aesthetic.
+- **Impeccable**: Used to audit, refine, and shape visual hierarchies, contrast ratios, micro-animations, focus states, and z-index structures to create a premium Drafting Table aesthetic.
+- **Caveman**: Used to carry out robust local console logging, manual regression checks, and sanity testing of authentication cookies and local Storage configurations.
+- **Handoff**: Used for generating clean pre-commit checklists, git status checks, and detailed project milestone documentation to enable smooth transitions between development cycles.
+- **Chrome DevTools MCP**: Integrated to automate browser viewport emulation (desktop `1280px` vs mobile `375px`), programmatically execute user interaction scripts (click events, input form fills), and capture rendered page state screenshots.
+- **Vercel MCP**: Integrated to list project configurations, query active deployments, fetch build logs, and monitor remote deployment pipelines directly.
